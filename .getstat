@@ -1,0 +1,30 @@
+#!/bin/bash
+
+start=`date +%s`
+if [[ -e /sys/class/net/eth0/statistics/rx_bytes ]]
+then
+eth="eth0"
+R1=`cat /sys/class/net/$eth/statistics/rx_bytes`
+T1=`cat /sys/class/net/$eth/statistics/tx_bytes`
+sleep 1
+R2=`cat /sys/class/net/$eth/statistics/rx_bytes`
+T2=`cat /sys/class/net/$eth/statistics/tx_bytes`
+else
+eth="venet0"
+R1=`cat /sys/class/net/$eth/statistics/rx_bytes`
+T1=`cat /sys/class/net/$eth/statistics/tx_bytes`
+sleep 1
+R2=`cat /sys/class/net/$eth/statistics/rx_bytes`
+T2=`cat /sys/class/net/$eth/statistics/tx_bytes`
+fi
+TBPS=`expr $T2 - $T1`
+RBPS=`expr $R2 - $R1`
+TKBPS=`expr $TBPS / 1024`
+RKBPS=`expr $RBPS / 1024`
+cpu=`grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}'`
+end=`date +%s`
+runtime=$((end-start))
+ip=`ip route get 1 | awk '{print $NF;exit}'`
+echo "Network bandwidth: tx $eth: $TKBPS kb/s rx $eth: $RKBPS kb/s
+Cpu utilisation: $cpu
+Time to be completed: $runtime sec"
